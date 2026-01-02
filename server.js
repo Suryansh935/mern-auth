@@ -4,6 +4,7 @@ import 'dotenv/config';
 import cookieParser from "cookie-parser";
 import connectDB from './config/mongodb.js';
 import authRouter from './routes/authRoute.js'
+import userRouter from './routes/userRoute.js'
 
 const app=express();
 
@@ -17,6 +18,7 @@ app.use(cors({credentials:true}));
 //Api Endpoints
 app.get('/',(req,res)=>res.send("API working fine"));
 app.use('/api/auth',authRouter)
+app.use('/api/user',userRouter)
 
 app.listen(port,()=>console.log(`server started on port:${port}`));
 

@@ -1,0 +1,211 @@
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import userModel from '../models/userModel.js'
+import transporter from '../config/nodemailer.js'
+//Register
+export const register=async(req,res)=>{
+    const{name,email,password}=req.body;
+    if(!name|| !email|| !password){
+        return res.json({success:false,message:'Missing Details'})
+    }
+    try{   
+       const existingUser=await userModel.findOne({email});
+       if(existingUser){
+        return res.json({success:false,message:"User already Exists"});
+       }
+       const hashedPassword=await bcrypt.hash(password,10);
+       const user = new userModel({name,email,password:hashedPassword});
+       await user.save();
+       //token generation
+       const token=jwt.sign({id:user._id},process.env.JWT_SECRET,{expiresIn:'7d'});
+       //using cookie send this token
+       res.cookie('token',token,{
+           httpOnly:true,
+           secure:process.env.NODE_ENV==='production',
+           sameSite:process.env.NODE_ENV==='production'?'none':'strict',
+           maxAge:7*24*60*60*1000
+       });
+       //sending Welcome Email
+        const mailOptions = {
+        from: `"MERN Auth App" <${process.env.SENDER_EMAIL}>`, // MUST match Gmail
+        to: email,
+        subject: "Welcome to MERN Auth App 🎉",
+        text: `Hi ${name},
+
+        Your account has been created successfully using this email: ${email}
+
+        Thanks,
+        MERN Auth Team`
+        };
+        await transporter.sendMail(mailOptions);
+        return res.json({success:true});
+    }
+    catch(error){
+        res.json({success:false,message:error.message})
+    }
+}
+
+//Login 
+export const login=async(req,res)=>{
+   const {email,password}=req.body;
+   if(!email || !password){
+    return res.json({success:false,message:'Email and password are required'})
+   }
+   try{
+    const user=await userModel.findOne({email});
+    if(!user){
+        return res.json({success:false,message:'Invalid User-Name'})
+    }
+    const isMatch=await bcrypt.compare(password,user.password);
+    if(!isMatch){
+       return res.json({success:false,message:"Invalid Password"})
+    }
+    const token=jwt.sign({id:user._id},process.env.JWT_SECRET,{expiresIn:'7d'});
+       //using cookie send this token
+       res.cookie('token',token,{
+           httpOnly:true,
+           secure:process.env.NODE_ENV==='production',
+           sameSite:process.env.NODE_ENV==='production'?'none':'strict',
+           maxAge:7*24*60*60*1000
+       });
+       return res.json({success:true});
+   }
+
+   catch(error){
+       res.json({success:false,message:error.message})
+   }
+}
+
+
+//Logout
+export const logout=async(req,res)=>{
+   try{
+    res.clearCookie('token',{
+     httpOnly:true,
+           secure:process.env.NODE_ENV==='production',
+           sameSite:process.env.NODE_ENV==='production'?'none':'strict',
+    })
+    return res.json({success:true,message:"Logged Out"})
+   }
+    catch(error){
+       res.json({success:false,message:error.message})
+   }
+}
+//Send Otp
+export const sendOtp=async(req,res)=>{
+
+    try{
+    const {userId}=req.user;
+    const user= await userModel.findById(userId);
+    if(user.isAccountVerified){//is AccountVerified is a field inside database .if it is true theen the user is already verifies
+        return res.json({success:false,message:"Account already verified"})
+    }
+    const otp=String(Math.floor(100000+Math.random()*900000));//math.floor will turn the float numbers to integer
+    user.verifyOtp=otp;
+    user.verifyOtpExpireAt=Date.now()+24*60*60*1000;
+
+    await user.save();//Updating the user database
+
+    const mailOption={
+        from:process.env.SENDER_EMAIL,
+        to:user.email,
+        subject:'Account Verification Otp',
+        text:`your Otp is ${otp}.Verify your account using this OTP.`
+
+    }
+    await transporter.sendMail(mailOption);
+    res.json({success:true,message:'Verification otp sent on Email.'})
+    }
+    catch(error){
+       res.json({success:false,message:error.message})
+    }
+}
+//verifyEmail
+export const verifyEmail=async(req,res)=>{
+    const { otp } = req.body;
+    const { userId } = req.user;
+   if(!userId || !otp){
+    return res.json({success:false,message:'Missing Details'});
+   }
+   try{
+    const user=await userModel.findById(userId);
+    if(!user){
+    return res.json({success:false,message:'User not Found'});    
+     }
+     if(user.verifyOtp==='' || user.verifyOtp!==otp){
+     return res.json({success:true,message:'Invalid Otp'})
+     }
+     if(user.verifyOtpExpireAt<Date.now()){
+        return res.json({success:false,message:'Otp Expired'});
+     }
+     user.isAccountVerified=true;
+     user.verifyOtp='';
+     user.verifyOtpExpireAt=0;
+     await user.save();
+       return res.json({success:true,message:'Email verified SuccessFully'});
+   }
+   catch(error){
+       res.json({success:false,message:error.message})
+    }
+}
+
+
+//send otp when password is to be reset
+export const sendResetOtp=async(req,res)=>{
+
+    try{
+    const {email}=req.body;
+    const user= await userModel.findOne({email});
+    if(!user){//is AccountVerified is a field inside database .if it is true theen the user is already verifies
+        return res.json({success:false,message:"Account doesn't exist"})
+    }
+    const otp=String(Math.floor(100000+Math.random()*900000));//math.floor will turn the float numbers to integer
+    user.resetOtp=otp;
+    user.resetOtpExpireAt=Date.now()+24*60*60*1000;
+
+    await user.save();//Updating the user database
+
+    const mailOption={
+        from:process.env.SENDER_EMAIL,
+        to:user.email,
+        subject:'OTP for Password Resetting',
+        text:`Your Otp is ${otp}.Reset your passsword using this OTP.`
+
+    }
+    await transporter.sendMail(mailOption);
+    res.json({success:true,message:'otp sent on Email.'})
+    }
+    catch(error){
+       res.json({success:false,message:error.message})
+    }
+}
+export const resetPassword=async(req,res)=>{
+    const {email,otp,newPassword}=req.body;
+    if(!email || !otp || !newPassword){//is AccountVerified is a field inside database .if it is true theen the user is already verifies
+        return res.json({success:false,message:"Email,Otp and new Password are required"});
+    }
+    try{
+        const user=await userModel.findOne({email});
+        if(!user){
+            return res.json({success:false,message:"User not Found"});
+        }
+        if(user.resetOtp==='' || user.resetOtp!=otp){
+            return res.json({sucess:false,message:'Invalid Otp'});
+        }
+         if(user.resetOtpExpireAt<Date.now()){
+        return res.json({success:false,message:'Otp Expired'});
+     }
+     const hashedPassword=await bcrypt.hash(newPassword,10);
+     user.password=hashedPassword;
+     user.resetOtp='';
+     user.resetOtpExpireAt=0;
+     await user.save();
+       return res.json({success:true,message:'Password has been reset Successfully'});
+
+    }
+    catch(error){
+        return res.json({success:false,message:error.message});
+    }
+
+}
+

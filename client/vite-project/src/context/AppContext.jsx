@@ -1,17 +1,24 @@
-import {createContext} from 'react';
-export const AppContent=createContext()
-export const AppContextProvider=(props)=>{
-    const backendUrl=import.meta.VITE_BACKEND_URL
-    const[isLoggedin,setIsLoggedin]=useState(false);
-    const[userData,setUserData]=useState(false);
+import { createContext, useState } from "react";
 
-    const value={
-            backendUrl
-        }
-    return(
-        
-        <AppContent.Provider value={value}>
-            {props.children}
-        </AppContent.Provider>
-    )
-}
+export const AppContent = createContext(null);
+
+export const AppContextProvider = ({ children }) => {
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+console.log("Checking Backend URL:", backendUrl);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userData, setUserData] = useState(null);
+
+  const value = {
+    backendUrl,
+    isLoggedIn,
+    setIsLoggedIn,
+    userData,
+    setUserData,
+  };
+
+  return (
+    <AppContent.Provider value={value}>
+      {children}
+    </AppContent.Provider>
+  );
+};

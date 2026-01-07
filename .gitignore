@@ -1,26 +1,15 @@
-# Dependencies
+# node
 node_modules/
-**/node_modules/
-
-# Environment files
 .env
-.env.*
-**/.env
-**/.env.*
 
-# Build outputs
-dist/
-**/dist/
-.vite/
-**/.vite/
-
-# Logs
-*.log
+# logs
 npm-debug.log*
 yarn-debug.log*
-pnpm-debug.log*
+yarn-error.log*
 
-# OS / Editor
+# build
+dist/
+build/
+
+# OS
 .DS_Store
-.vscode/
-.idea/

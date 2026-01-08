@@ -133,7 +133,7 @@ export const verifyEmail=async(req,res)=>{
     return res.json({success:false,message:'User not Found'});    
      }
      if(user.verifyOtp==='' || user.verifyOtp!==otp){
-     return res.json({success:true,message:'Invalid Otp'})
+     return res.json({success:false,message:'Invalid Otp'})
      }
      if(user.verifyOtpExpireAt<Date.now()){
         return res.json({success:false,message:'Otp Expired'});
@@ -149,7 +149,21 @@ export const verifyEmail=async(req,res)=>{
     }
 }
 
+//Check whether the user is authenticated or not
+export const isAuthenticate = async (req, res) => {
+  try {
+    
 
+    return res.json({
+      success: true,
+      message: 'User authenticated',
+     
+    });
+
+  } catch (error) {
+    return res.json({ success: false, message: 'Authentication failed' });
+  }
+};
 //send otp when password is to be reset
 export const sendResetOtp=async(req,res)=>{
 

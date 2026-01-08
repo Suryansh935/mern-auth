@@ -8,7 +8,7 @@ import axios from "axios";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { backendUrl, setIsLoggedIn } = useContext(AppContent);
+  const { backendUrl, setIsLoggedIn ,getUserData} = useContext(AppContent);
 
   const [state, setState] = useState("Sign Up");
   const [name, setName] = useState("");
@@ -29,6 +29,7 @@ const Login = () => {
 
         if (data.success) {
           setIsLoggedIn(true);
+          getUserData();
           navigate('/');
         } else {
           toast.error(data.message);
@@ -41,6 +42,7 @@ const Login = () => {
 
         if (data.success) {
           setIsLoggedIn(true);
+          getUserData();
           navigate('/');
         } else {
           toast.error(data.message);

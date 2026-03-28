@@ -2,7 +2,6 @@
 
 A full-stack authentication system built with the **MERN Stack** (MongoDB, Express, React, Node.js) featuring JWT-based secure authentication, email verification via OTP, and password reset functionality.
 
-> 📺 Based on the tutorial by [GreatStackDev](https://www.youtube.com/@GreatStackDev)
 
 ---
 
@@ -268,13 +267,3 @@ npm run preview # Preview production build
 
 ---
 
-## 📄 License
-
-This project is open-source and available under the [MIT License](LICENSE).
-
----
-
-## 🙏 Credits
-
-Tutorial by **[GreatStackDev](https://www.youtube.com/@GreatStackDev)**  
-📺 Watch the full tutorial on YouTube
